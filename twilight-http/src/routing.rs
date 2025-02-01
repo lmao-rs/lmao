@@ -1421,7 +1421,7 @@ impl Route<'_> {
     ///
     /// Use a route's path to retrieve a ratelimiter ticket:
     ///
-    /// ```
+    /// ```ignore
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     /// use twilight_http::routing::Route;

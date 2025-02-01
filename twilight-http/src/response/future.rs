@@ -18,7 +18,7 @@ use std::{
     time::Duration,
 };
 use tokio::time::{self, Timeout};
-use twilight_http_ratelimiting::{ticket::TicketSender, RatelimitHeaders, WaitForTicketFuture};
+use twilight_http_ratelimiting::{Headers, Permit, PermitFuture};
 
 type Output<T> = Result<Response<T>, Error>;
 
@@ -75,7 +75,7 @@ impl Failed {
 struct InFlight {
     future: Pin<Box<Timeout<HyperResponseFuture>>>,
     invalid_token: Option<Arc<AtomicBool>>,
-    tx: Option<TicketSender>,
+    tx: Option<Permit>,
 }
 
 impl InFlight {
@@ -112,14 +112,12 @@ impl InFlight {
                 .iter()
                 .map(|(key, value)| (key.as_str(), value.as_bytes()));
 
-            match RatelimitHeaders::from_pairs(headers) {
-                Ok(v) => {
-                    let _res = tx.headers(Some(v));
-                }
+            match Headers::from_pairs(headers) {
+                Ok(v) => tx.complete(v),
                 Err(source) => {
                     tracing::warn!("header parsing failed: {source:?}; {resp:?}");
 
-                    let _res = tx.headers(None);
+                    tx.complete(None);
                 }
             }
         }
@@ -171,20 +169,13 @@ struct RatelimitQueue {
     response_future: HyperResponseFuture,
     timeout: Duration,
     pre_flight_check: Option<Box<dyn FnOnce() -> bool + Send + 'static>>,
-    wait_for_sender: WaitForTicketFuture,
+    rx: PermitFuture,
 }
 
 impl RatelimitQueue {
     fn poll<T>(mut self, cx: &mut Context<'_>) -> InnerPoll<T> {
-        let tx = match Pin::new(&mut self.wait_for_sender).poll(cx) {
-            Poll::Ready(Ok(tx)) => tx,
-            Poll::Ready(Err(source)) => {
-                return InnerPoll::Ready(Err(Error {
-                    kind: ErrorType::RatelimiterTicket,
-                    source: Some(source),
-                }))
-            }
-            Poll::Pending => return InnerPoll::Pending(ResponseFutureStage::RatelimitQueue(self)),
+        let Poll::Ready(tx) = Pin::new(&mut self.rx).poll(cx) else {
+            return InnerPoll::Pending(ResponseFutureStage::RatelimitQueue(self));
         };
 
         if let Some(pre_flight_check) = self.pre_flight_check {
@@ -351,7 +342,7 @@ impl<T> ResponseFuture<T> {
         invalid_token: Option<Arc<AtomicBool>>,
         response_future: HyperResponseFuture,
         timeout: Duration,
-        wait_for_sender: WaitForTicketFuture,
+        wait_for_sender: PermitFuture,
     ) -> Self {
         Self {
             phantom: PhantomData,
@@ -360,7 +351,7 @@ impl<T> ResponseFuture<T> {
                 response_future,
                 timeout,
                 pre_flight_check: None,
-                wait_for_sender,
+                rx: wait_for_sender,
             }),
         }
     }

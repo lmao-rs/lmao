@@ -114,7 +114,7 @@ use std::{
     time::Duration,
 };
 use tokio::time;
-use twilight_http_ratelimiting::Ratelimiter;
+use twilight_http_ratelimiting::RateLimiter;
 use twilight_model::{
     channel::{message::AllowedMentions, ChannelType},
     guild::{
@@ -246,7 +246,7 @@ pub struct Client {
     default_headers: Option<HeaderMap>,
     http: HyperClient<Connector, Full<Bytes>>,
     proxy: Option<Box<str>>,
-    ratelimiter: Option<Box<dyn Ratelimiter>>,
+    ratelimiter: Option<RateLimiter>,
     timeout: Duration,
     /// Whether the token has been invalidated.
     ///
@@ -327,14 +327,6 @@ impl Client {
     /// messages.
     pub const fn default_allowed_mentions(&self) -> Option<&AllowedMentions> {
         self.default_allowed_mentions.as_ref()
-    }
-
-    /// Get the Ratelimiter used by the client internally.
-    ///
-    /// This will return `None` only if ratelimit handling
-    /// has been explicitly disabled in the [`ClientBuilder`].
-    pub fn ratelimiter(&self) -> Option<&dyn Ratelimiter> {
-        self.ratelimiter.as_ref().map(AsRef::as_ref)
     }
 
     /// Get an auto moderation rule in a guild.
@@ -2999,9 +2991,9 @@ impl Client {
             .flatten();
 
         Ok(if let Some(ratelimiter) = &self.ratelimiter {
-            let tx_future = ratelimiter.wait_for_ticket(ratelimit_path);
+            let rx = ratelimiter.acquire(ratelimit_path);
 
-            ResponseFuture::ratelimit(invalid_token, inner, self.timeout, tx_future)
+            ResponseFuture::ratelimit(invalid_token, inner, self.timeout, rx)
         } else {
             ResponseFuture::new(Box::pin(time::timeout(self.timeout, inner)), invalid_token)
         })
