@@ -360,6 +360,54 @@ pub enum CommandOptionValue {
     User(Id<UserMarker>),
 }
 
+impl From<Id<AttachmentMarker>> for CommandOptionValue {
+    fn from(value: Id<AttachmentMarker>) -> Self {
+        CommandOptionValue::Attachment(value)
+    }
+}
+
+impl From<bool> for CommandOptionValue {
+    fn from(value: bool) -> Self {
+        CommandOptionValue::Boolean(value)
+    }
+}
+
+impl From<Id<ChannelMarker>> for CommandOptionValue {
+    fn from(value: Id<ChannelMarker>) -> Self {
+        CommandOptionValue::Channel(value)
+    }
+}
+
+impl From<i64> for CommandOptionValue {
+    fn from(value: i64) -> Self {
+        CommandOptionValue::Integer(value)
+    }
+}
+
+impl From<f64> for CommandOptionValue {
+    fn from(value: f64) -> Self {
+        CommandOptionValue::Number(value)
+    }
+}
+
+impl From<Id<RoleMarker>> for CommandOptionValue {
+    fn from(value: Id<RoleMarker>) -> Self {
+        CommandOptionValue::Role(value)
+    }
+}
+
+impl From<String> for CommandOptionValue {
+    fn from(value: String) -> Self {
+        CommandOptionValue::String(value)
+    }
+}
+
+impl From<Id<UserMarker>> for CommandOptionValue {
+    fn from(value: Id<UserMarker>) -> Self {
+        CommandOptionValue::User(value)
+    }
+}
+
 impl CommandOptionValue {
     pub const fn kind(&self) -> CommandOptionType {
         match self {
