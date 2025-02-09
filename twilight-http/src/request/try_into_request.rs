@@ -19,8 +19,8 @@ mod private {
                 UpdateApplicationEmoji,
             },
             interaction::{
-                CreateFollowup, CreateResponse, DeleteFollowup, DeleteResponse, GetFollowup,
-                GetResponse, UpdateFollowup, UpdateResponse,
+                CreateFollowup, CreateResponse, CreateResponseWithResponse, DeleteFollowup,
+                DeleteResponse, GetFollowup, GetResponse, UpdateFollowup, UpdateResponse,
             },
             monetization::{
                 create_test_entitlement::CreateTestEntitlement, get_entitlements::GetEntitlements,
@@ -139,6 +139,7 @@ mod private {
     impl Sealed for CreatePrivateChannel<'_> {}
     impl Sealed for CreateReaction<'_> {}
     impl Sealed for CreateResponse<'_> {}
+    impl Sealed for CreateResponseWithResponse<'_> {}
     impl Sealed for CreateRole<'_> {}
     impl Sealed for CreateStageInstance<'_> {}
     impl Sealed for CreateTemplate<'_> {}

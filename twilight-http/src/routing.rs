@@ -929,6 +929,8 @@ pub enum Route<'a> {
         interaction_id: u64,
         /// The token for the interaction.
         interaction_token: &'a str,
+        /// If response should be retrived.
+        with_response: bool,
     },
     /// Route information to join a thread as the current user.
     JoinThread {
@@ -2918,13 +2920,20 @@ impl Display for Route<'_> {
             Route::InteractionCallback {
                 interaction_id,
                 interaction_token,
+                with_response,
             } => {
                 f.write_str("interactions/")?;
                 Display::fmt(interaction_id, f)?;
                 f.write_str("/")?;
                 f.write_str(interaction_token)?;
 
-                f.write_str("/callback")
+                f.write_str("/callback")?;
+
+                if *with_response {
+                    f.write_str("?with_response=true")?;
+                }
+
+                Ok(())
             }
             Route::JoinThread { channel_id } | Route::LeaveThread { channel_id } => {
                 f.write_str("channels/")?;

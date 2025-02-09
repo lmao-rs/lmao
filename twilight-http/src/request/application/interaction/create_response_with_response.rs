@@ -1,11 +1,8 @@
 use crate::{
     client::Client,
     error::Error,
-    request::{
-        application::interaction::CreateResponseWithResponse, attachment::AttachmentManager,
-        Request, TryIntoRequest,
-    },
-    response::{marker::EmptyBody, Response, ResponseFuture},
+    request::{attachment::AttachmentManager, Request, TryIntoRequest},
+    response::{Response, ResponseFuture},
     routing::Route,
 };
 use std::future::IntoFuture;
@@ -18,14 +15,14 @@ use twilight_model::{
 ///
 /// This endpoint is not bound to the application's global rate limit.
 #[must_use = "requests must be configured and executed"]
-pub struct CreateResponse<'a> {
+pub struct CreateResponseWithResponse<'a> {
     interaction_id: Id<InteractionMarker>,
     interaction_token: &'a str,
     response: &'a InteractionResponse,
     http: &'a Client,
 }
 
-impl<'a> CreateResponse<'a> {
+impl<'a> CreateResponseWithResponse<'a> {
     pub(crate) const fn new(
         http: &'a Client,
         interaction_id: Id<InteractionMarker>,
@@ -39,21 +36,12 @@ impl<'a> CreateResponse<'a> {
             http,
         }
     }
-
-    pub const fn with_response(self) -> CreateResponseWithResponse<'a> {
-        CreateResponseWithResponse::new(
-            self.http,
-            self.interaction_id,
-            self.interaction_token,
-            self.response,
-        )
-    }
 }
 
-impl IntoFuture for CreateResponse<'_> {
-    type Output = Result<Response<EmptyBody>, Error>;
+impl IntoFuture for CreateResponseWithResponse<'_> {
+    type Output = Result<Response<InteractionResponse>, Error>;
 
-    type IntoFuture = ResponseFuture<EmptyBody>;
+    type IntoFuture = ResponseFuture<InteractionResponse>;
 
     fn into_future(self) -> Self::IntoFuture {
         let http = self.http;
@@ -65,12 +53,12 @@ impl IntoFuture for CreateResponse<'_> {
     }
 }
 
-impl TryIntoRequest for CreateResponse<'_> {
+impl TryIntoRequest for CreateResponseWithResponse<'_> {
     fn try_into_request(self) -> Result<Request, Error> {
         let mut request = Request::builder(&Route::InteractionCallback {
             interaction_id: self.interaction_id.get(),
             interaction_token: self.interaction_token,
-            with_response: false,
+            with_response: true,
         });
 
         // Interaction executions don't need the authorization token, only the
@@ -126,6 +114,7 @@ mod tests {
         let req = client
             .interaction(application_id)
             .create_response(interaction_id, &token, &response)
+            .with_response()
             .try_into_request()?;
 
         assert!(!req.use_authorization_token());
