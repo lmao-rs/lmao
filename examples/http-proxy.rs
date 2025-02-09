@@ -10,7 +10,7 @@ async fn main() -> anyhow::Result<()> {
 
     let client = Client::builder()
         .proxy("localhost:3000".to_owned(), true)
-        .ratelimiter(None)
+        .ratelimiter(false)
         .build();
     let channel_id = Id::new(620_980_184_606_048_278);
 

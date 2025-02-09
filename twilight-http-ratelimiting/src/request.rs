@@ -11,6 +11,7 @@
 use std::{
     error::Error,
     fmt::{Display, Formatter, Result as FmtResult},
+    hash::{Hash, Hasher},
     str::FromStr,
 };
 
@@ -304,6 +305,125 @@ pub enum Path {
     /// When used with interactions, this path is not bound to the application's
     /// global rate limit.
     WebhooksIdTokenMessagesId(u64, String),
+}
+
+impl Path {
+    /// Whether the path is an interaction path.
+    pub(crate) const fn is_interaction(&self) -> bool {
+        matches!(
+            self,
+            Self::InteractionCallback(_)
+                | Self::WebhooksId(_)
+                | Self::WebhooksIdToken(_, _)
+                | Self::WebhooksIdTokenMessagesId(_, _)
+        )
+    }
+
+    /// Feeds the top level components of this path into the given [`Hasher`].
+    #[allow(clippy::too_many_lines)]
+    pub(crate) fn hash_components(&self, state: &mut impl Hasher) {
+        match self {
+            Path::ApplicationsMe
+            | Path::Gateway
+            | Path::GatewayBot
+            | Path::Guilds
+            | Path::InvitesCode
+            | Path::OauthApplicationsMe
+            | Path::OauthMe
+            | Path::StageInstances
+            | Path::StickerPacks
+            | Path::Stickers
+            | Path::UsersId
+            | Path::UsersIdChannels
+            | Path::UsersIdConnections
+            | Path::UsersIdGuilds
+            | Path::UsersIdGuildsId
+            | Path::UsersIdGuildsIdMember
+            | Path::VoiceRegions => {}
+            Path::ApplicationCommand(id)
+            | Path::ApplicationCommandId(id)
+            | Path::ApplicationEmojis(id)
+            | Path::ApplicationEmoji(id)
+            | Path::ApplicationGuildCommand(id)
+            | Path::ChannelsId(id)
+            | Path::ChannelsIdFollowers(id)
+            | Path::ChannelsIdInvites(id)
+            | Path::ChannelsIdMessages(id)
+            | Path::ChannelsIdMessagesBulkDelete(id)
+            | Path::ChannelsIdMessagesIdCrosspost(id)
+            | Path::ChannelsIdMessagesIdReactions(id)
+            | Path::ChannelsIdMessagesIdReactionsUserIdType(id)
+            | Path::ChannelsIdMessagesIdThreads(id)
+            | Path::ChannelsIdPermissionsOverwriteId(id)
+            | Path::ChannelsIdPins(id)
+            | Path::ChannelsIdPinsMessageId(id)
+            | Path::ChannelsIdPolls(id)
+            | Path::ChannelsIdRecipients(id)
+            | Path::ChannelsIdThreadMembers(id)
+            | Path::ChannelsIdThreadMembersId(id)
+            | Path::ChannelsIdThreads(id)
+            | Path::ChannelsIdTyping(id)
+            | Path::ChannelsIdWebhooks(id)
+            | Path::ApplicationIdEntitlements(id)
+            | Path::ApplicationIdSKUs(id)
+            | Path::GuildsId(id)
+            | Path::GuildsIdAuditLogs(id)
+            | Path::GuildsIdAutoModerationRules(id)
+            | Path::GuildsIdAutoModerationRulesId(id)
+            | Path::GuildsIdBans(id)
+            | Path::GuildsIdBansId(id)
+            | Path::GuildsIdBansUserId(id)
+            | Path::GuildsIdChannels(id)
+            | Path::GuildsIdEmojis(id)
+            | Path::GuildsIdEmojisId(id)
+            | Path::GuildsIdIntegrations(id)
+            | Path::GuildsIdIntegrationsId(id)
+            | Path::GuildsIdIntegrationsIdSync(id)
+            | Path::GuildsIdInvites(id)
+            | Path::GuildsIdMembers(id)
+            | Path::GuildsIdMembersId(id)
+            | Path::GuildsIdMembersIdRolesId(id)
+            | Path::GuildsIdMembersMeNick(id)
+            | Path::GuildsIdMembersSearch(id)
+            | Path::GuildsIdMfa(id)
+            | Path::GuildsIdOnboarding(id)
+            | Path::GuildsIdPreview(id)
+            | Path::GuildsIdPrune(id)
+            | Path::GuildsIdRegions(id)
+            | Path::GuildsIdRoles(id)
+            | Path::GuildsIdRolesId(id)
+            | Path::GuildsIdScheduledEvents(id)
+            | Path::GuildsIdScheduledEventsId(id)
+            | Path::GuildsIdScheduledEventsIdUsers(id)
+            | Path::GuildsIdStickers(id)
+            | Path::GuildsIdTemplates(id)
+            | Path::GuildsIdThreads(id)
+            | Path::GuildsIdVanityUrl(id)
+            | Path::GuildsIdVoiceStates(id)
+            | Path::GuildsIdWebhooks(id)
+            | Path::GuildsIdWelcomeScreen(id)
+            | Path::GuildsIdWidget(id)
+            | Path::GuildsIdWidgetJson(id)
+            | Path::InteractionCallback(id)
+            | Path::WebhooksId(id)
+            | Path::ApplicationGuildCommandId(id) => id.hash(state),
+            Path::ChannelsIdMessagesId(method, id) => {
+                method.hash(state);
+                id.hash(state);
+            }
+            Path::GuildsIdTemplatesCode(id, code) => {
+                id.hash(state);
+                code.hash(state);
+            }
+            Path::GuildsTemplatesCode(code) => {
+                code.hash(state);
+            }
+            Path::WebhooksIdToken(id, token) | Path::WebhooksIdTokenMessagesId(id, token) => {
+                id.hash(state);
+                token.hash(state);
+            }
+        }
+    }
 }
 
 impl FromStr for Path {

@@ -6,7 +6,7 @@ use std::{
     sync::{atomic::AtomicBool, Arc},
     time::Duration,
 };
-use twilight_http_ratelimiting::{InMemoryRatelimiter, Ratelimiter};
+use twilight_http_ratelimiting::RateLimiter;
 use twilight_model::channel::message::AllowedMentions;
 
 /// A builder for [`Client`].
@@ -15,7 +15,7 @@ use twilight_model::channel::message::AllowedMentions;
 pub struct ClientBuilder {
     pub(crate) default_allowed_mentions: Option<AllowedMentions>,
     pub(crate) proxy: Option<Box<str>>,
-    pub(crate) ratelimiter: Option<Box<dyn Ratelimiter>>,
+    ratelimit: bool,
     remember_invalid_token: bool,
     pub(crate) default_headers: Option<HeaderMap>,
     pub(crate) timeout: Duration,
@@ -46,7 +46,7 @@ impl ClientBuilder {
             http,
             default_headers: self.default_headers,
             proxy: self.proxy,
-            ratelimiter: self.ratelimiter,
+            ratelimiter: (self.ratelimit && !cfg!(test)).then(RateLimiter::default),
             timeout: self.timeout,
             token_invalidated,
             token: self.token,
@@ -72,7 +72,7 @@ impl ClientBuilder {
     ///
     /// Set the proxy to `twilight_http_proxy.internal`:
     ///
-    /// ```
+    /// ```no_run
     /// use twilight_http::Client;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -90,16 +90,12 @@ impl ClientBuilder {
         self
     }
 
-    /// Set a ratelimiter to use.
+    /// Whether to rate limit requests.
     ///
-    /// If the argument is `None` then the client's ratelimiter will be skipped
-    /// before making a request.
-    ///
-    /// If this method is not called at all then a default [`InMemoryRatelimiter`] will be
-    /// created by [`ClientBuilder::build`].
+    /// Defaults to true.
     #[allow(clippy::missing_const_for_fn)]
-    pub fn ratelimiter(mut self, ratelimiter: Option<Box<dyn Ratelimiter>>) -> Self {
-        self.ratelimiter = ratelimiter;
+    pub fn ratelimiter(mut self, ratelimit: bool) -> Self {
+        self.ratelimit = ratelimit;
 
         self
     }
@@ -152,12 +148,11 @@ impl ClientBuilder {
 
 impl Default for ClientBuilder {
     fn default() -> Self {
-        #[allow(clippy::box_default)]
         Self {
             default_allowed_mentions: None,
             default_headers: None,
             proxy: None,
-            ratelimiter: Some(Box::new(InMemoryRatelimiter::default())),
+            ratelimit: true,
             remember_invalid_token: true,
             timeout: Duration::from_secs(10),
             token: None,
