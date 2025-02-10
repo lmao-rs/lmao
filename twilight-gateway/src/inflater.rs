@@ -1,4 +1,4 @@
-//! Efficiently decompress Discord gateway messages.
+//! Flate2 based decompressor for Discord gateway messages.
 //!
 //! The [`Inflater`] decompresses messages sent over the gateway by reusing a
 //! common buffer to minimize the amount of allocations in the hot path.
@@ -7,68 +7,11 @@
 //! if used, shrank every minute to the size of the most recent completed
 //! message.
 
+#![allow(deprecated)]
+
+use crate::error::{CompressionError, CompressionErrorType};
 use flate2::{Decompress, FlushDecompress};
-use std::{
-    error::Error,
-    fmt::{Display, Formatter, Result as FmtResult},
-    time::Instant,
-};
-
-/// An operation relating to compression failed.
-#[derive(Debug)]
-pub struct CompressionError {
-    /// Type of error.
-    kind: CompressionErrorType,
-    /// Source error if available.
-    source: Option<Box<dyn Error + Send + Sync>>,
-}
-
-impl CompressionError {
-    /// Immutable reference to the type of error that occurred.
-    #[must_use = "retrieving the type has no effect if left unused"]
-    pub const fn kind(&self) -> &CompressionErrorType {
-        &self.kind
-    }
-
-    /// Consume the error, returning the source error if there is any.
-    #[must_use = "consuming the error and retrieving the source has no effect if left unused"]
-    pub fn into_source(self) -> Option<Box<dyn Error + Send + Sync>> {
-        self.source
-    }
-
-    /// Consume the error, returning the owned error type and the source error.
-    #[must_use = "consuming the error into its parts has no effect if left unused"]
-    pub fn into_parts(self) -> (CompressionErrorType, Option<Box<dyn Error + Send + Sync>>) {
-        (self.kind, None)
-    }
-}
-
-impl Display for CompressionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        match self.kind {
-            CompressionErrorType::Decompressing => f.write_str("message could not be decompressed"),
-            CompressionErrorType::NotUtf8 => f.write_str("decompressed message is not UTF-8"),
-        }
-    }
-}
-
-impl Error for CompressionError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        self.source
-            .as_ref()
-            .map(|source| &**source as &(dyn Error + 'static))
-    }
-}
-
-/// Type of [`CompressionError`] that occurred.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum CompressionErrorType {
-    /// Decompressing a frame failed.
-    Decompressing,
-    /// Decompressed message is not UTF-8.
-    NotUtf8,
-}
+use std::time::Instant;
 
 /// Whether the message is incomplete.
 fn is_incomplete_message(message: &[u8]) -> bool {
@@ -101,6 +44,7 @@ fn is_incomplete_message(message: &[u8]) -> bool {
 /// let total_percentage_saved = 100.0 - total_percentage_compressed;
 /// # }
 /// ```
+#[deprecated(since = "0.16.1", note = "replaced by zstd compression")]
 #[derive(Debug)]
 pub struct Inflater {
     /// Common decompressed message buffer.
@@ -229,10 +173,7 @@ impl Inflater {
 
         String::from_utf8(decompressed)
             .map(Some)
-            .map_err(|source| CompressionError {
-                kind: CompressionErrorType::NotUtf8,
-                source: Some(Box::new(source)),
-            })
+            .map_err(CompressionError::from_utf8_error)
     }
 
     /// Reset the inflater's state.

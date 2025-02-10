@@ -35,9 +35,10 @@ from a `Fn(ShardId, ConfigBuilder) -> Config` closure, with the help of the
     performance and widely used platforms
   * none of the above: install your own via [`CryptoProvider::install_default`]
 * `twilight-http` (*default*): enable the `stream::create_recommended` function
-* Zlib (mutually exclusive)
-  * `zlib-stock` (*default*): [`flate2`]'s stock zlib implementation
-  * `zlib-simd`: use [`zlib-ng`] for zlib, may have better performance
+* Compression (mutually exclusive)
+  * `zlib-stock`: [`flate2`]'s stock zlib implementation (*deprecated*)
+  * `zlib-simd`: use [`zlib-ng`] for zlib, may have better performance (*deprecated*)
+  * `zstd` (*default*): enable zstd transport compression
 
 ## Example
 

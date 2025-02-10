@@ -34,6 +34,7 @@ twilight-model = { default-features = false, path = "../twilight-model", version
 flate2 = { default-features = false, optional = true, version = "1.0.24" }
 twilight-http = { default-features = false, optional = true, path = "../twilight-http", version = "0.16.0" }
 simd-json = { default-features = false, features = ["serde_impl", "swar-number-parsing"], optional = true, version = "0.14.0-rc.3" }
+zstd-safe = { default-features = false, optional = true, version = "7.2.1" }
 
 [dev-dependencies]
 anyhow = { default-features = false, features = ["std"], version = "1" }
@@ -44,7 +45,7 @@ tokio-stream = { default-features = false, version = "0.1" }
 tracing-subscriber = { default-features = false, features = ["fmt", "tracing-log"], version = "0.3" }
 
 [features]
-default = ["rustls-platform-verifier", "rustls-ring", "twilight-http", "zlib-stock"]
+default = ["rustls-platform-verifier", "rustls-ring", "twilight-http", "zstd"]
 native-tls = ["tokio-websockets/native-tls", "tokio-websockets/openssl"]
 rustls-platform-verifier = ["tokio-websockets/rustls-platform-verifier"]
 rustls-native-roots = ["tokio-websockets/rustls-native-roots"]
@@ -54,6 +55,7 @@ rustls-aws_lc_rs = ["tokio-websockets/aws_lc_rs"]
 rustls-aws-lc-rs = ["rustls-aws_lc_rs"] # Alias for convenience, underscores are preferred in the rustls stack
 zlib-simd = ["dep:flate2", "flate2?/zlib-ng"]
 zlib-stock = ["dep:flate2", "flate2?/zlib"]
+zstd = ["dep:zstd-safe"]
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]

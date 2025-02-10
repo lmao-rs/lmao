@@ -58,14 +58,20 @@ This is enabled by default.
 The `rustls-webpki-roots` feature enables [`tokio-websockets`]'
 `rustls-webpki-roots` feature.
 
-### Zlib
+### Compression
 
-#### Stock
+`twilight-gateway` supports both Zlib and Zstandard transport compression.
+
+#### Zlib (deprecated)
+
+Zlib allows specifying two different backends.
+
+##### Stock
 
 The `zlib-stock` feature makes [flate2] use of the stock Zlib which is either
 upstream or the one included with the operating system.
 
-#### SIMD
+##### SIMD
 
 `zlib-simd` enables the use of [zlib-ng] which is a modern fork of zlib that in
 most cases will be more effective. However, this will add an external dependency
@@ -73,6 +79,12 @@ on [cmake].
 
 If both are enabled or if the `zlib` feature of [flate2] is enabled anywhere in
 the dependency tree it will make use of that instead of [zlib-ng].
+
+#### Zstandard
+
+The `zstd` feature uses Facebook's zstd library to decompresses incoming messages.
+
+This feature takes precedence over the zlib features.
 
 ## Example
 
