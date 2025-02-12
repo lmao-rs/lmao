@@ -23,10 +23,11 @@ time = { default-features = false, features = ["formatting"], version = "0.3" }
 
 [features]
 builder = ["dep:twilight-model", "dep:twilight-validate"]
+format = []
 link = ["dep:twilight-model"]
 permission-calculator = ["dep:twilight-model"]
 snowflake = ["dep:twilight-model"]
-full = ["builder", "link", "permission-calculator", "snowflake"]
+full = ["builder", "format", "link", "permission-calculator", "snowflake"]
 
 [package.metadata.docs.rs]
 all-features = true
