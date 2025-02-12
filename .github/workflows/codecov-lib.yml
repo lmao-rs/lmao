@@ -28,7 +28,7 @@ jobs:
           args: "--ignore-tests --all-features"
 
       - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
 
       - name: Upload coverage to GitHub
         uses: actions/upload-artifact@v4
